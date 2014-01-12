@@ -1,0 +1,7 @@
+div.controls {
+  text-align: center;
+}
+div.controls button.shoot {
+  padding: 10% 35%;
+  margin-top: 10%;
+}
