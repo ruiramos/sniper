@@ -67,7 +67,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 
 	function onFrame(event) { 
 		if(aimDestination)
-			aim.position = aim.position.add(aimDestination.subtract(aim.position).divide(60 * 0.65)); // 0.2s!
+			aim.position = aim.position.add(aimDestination.subtract(aim.position).divide(60 * 0.3)); // 0.2s!
 
 		if(aimDestination && aimDestination.equals(aim.position)){
 			aimDestination = null;
@@ -98,18 +98,18 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 			socket.on('dev-angles', function(data){ 
 				data.a = (data.a > 180) ? data.a - 360 : data.a;
 			
-				if(ia.length < 4){	
+				if(ia.length < 6){	
 					ia.push(data.a);
 					ib.push(data.b);
 					ig.push(data.g); 
 					return;				
 
-				} else if(ia.length == 4 && !iaAvg){
-					ia.splice(0,2);
+				} else if(ia.length == 6 && !iaAvg){
+					ia.splice(0,3);
 					iaAvg = _.reduce(ia, function(memo, num){ return memo + num}, 0);
 					iaAvg /= ia.length;
 
-					ib.splice(0,2);				
+					ib.splice(0,3);				
 					ibAvg = _.reduce(ib, function(memo, num){ return memo + num}, 0);
 					ibAvg /= ib.length;				
 
@@ -135,7 +135,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 				$('div.status').text('disconnected');
 				setAimColor(defaultColor);
 
-				moveAim(0,0);
+				moveAim(dw/2, dh/2);
 				ia = [];
 				ib = [];
 				ig = [];

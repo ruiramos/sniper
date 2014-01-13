@@ -12,6 +12,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'fastclick'], function($, 
 		var host = 'http://192.168.0.5:3001';
 	}	
 
+	$('div.status').text('disconnected');
+
 	$('button.connect').click(function(){
 		gameId = $('input').val();
 		
@@ -34,7 +36,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'fastclick'], function($, 
 
 				var count = 0;
 				window.ondeviceorientation = function(event) {
-					if(count == 4){
+					if(count == 3){
 						var obj = {code: gameId, a: event.alpha, b: event.beta, c: event.gamma}
 						socket.emit('dev-angles', obj);
 						count = 0;					
