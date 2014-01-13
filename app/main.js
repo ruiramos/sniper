@@ -1,13 +1,20 @@
 require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, io, paper){
-	var socket = io.connect('http://localhost:3000'),
+
+	if(window.location.hostname == 'localhost'){
+		var host = 'http://localhost:3001';
+	} else {
+		var host = 'http://ruiramos.com:3001';
+	}
+
+	var socket = io.connect(host),
 			gameId,
 			ia, ib, ig, 
 			iaAvg, ibAvg,
 			dw = $(document).width(),
 			dh = $(document).height(),
-			multa = multb = 3.5,
+			multa = multb = 3.5, // should actually depend on screen size
 			aim, aimDestination,
-			circles = [], angle = 0; // should actually depend on screen size
+			circles = [], angle = 0; 
 	
 	var defaultColor = '#0000ff',
 			activeColor = '#ff0000'
@@ -33,7 +40,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 		// cheating
 		circle1 = new paper.Shape.Circle({x: 100, y: 200}, 60)
 		circle2 = new paper.Shape.Circle({x: 1000, y: 150}, 70)
-		circle3 = new paper.Shape.Circle({x: 400, y: 700}, 80)
+		circle3 = new paper.Shape.Circle({x: 400, y: 570}, 80)
 
 		circle1.style = {fillColor:'white', strokeColor: 'black', strokeWidth: 2};
 		circle2.style = {fillColor:'green', strokeColor: 'black', strokeWidth: 2};
@@ -156,8 +163,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 
 	// ------------------------------ Utils
 	function ensureBetween(value, min, max){
-		return (value > max) ? max :
-							(value < min) ? min : value;
+		return Math.max(Math.min(max, value), min);
 	}
 
 })

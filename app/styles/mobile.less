@@ -1,13 +1,17 @@
 div.controls {
   text-align:center;
 
-  div.shoot {
-    padding:10% 50%;
+  button.shoot {
+    width: 100%;
+    height: 200px;
     margin-top:5%;
     background:red;
     color:white;
     border-bottom:2px solid darkred;
     border-right:2px solid darkred;
+
+    -webkit-appearance: none; 
+    -moz-appearance: none;  
 
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -15,5 +19,10 @@ div.controls {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;    
+    
+
+    &:ACTIVE {
+      background:darkred;
+    }
   }
 }
