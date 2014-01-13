@@ -36,7 +36,7 @@ require(['jquery', 'underscore', 'socket.io-aclient'], function($, _, io){
 		});
 	});
 
-	$('button.shoot').click(function(){
+	$('div.shoot').click(function(){
 			socket.emit('shoot', {code: gameId});			
 	})
 

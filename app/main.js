@@ -7,7 +7,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 			dh = $(document).height(),
 			multa = multb = 3.5,
 			aim, aimDestination,
-			circle1, circle2, circle3; // should actually depend on screen size
+			circles = [], angle = 0; // should actually depend on screen size
 	
 	var defaultColor = '#0000ff',
 			activeColor = '#ff0000'
@@ -31,23 +31,25 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 		paper.setup('area');
 
 		// cheating
-		 circle1 = new paper.Shape.Circle({x: 100, y: 200}, 60)
-		 circle2 = new paper.Shape.Circle({x: 1000, y: 150}, 70)
-		 circle3 = new paper.Shape.Circle({x: 400, y: 700}, 80)
-		circle1.style = {fillColor:'red', strokeColor: 'black', strokeWidth: 2};
+		circle1 = new paper.Shape.Circle({x: 100, y: 200}, 60)
+		circle2 = new paper.Shape.Circle({x: 1000, y: 150}, 70)
+		circle3 = new paper.Shape.Circle({x: 400, y: 700}, 80)
+
+		circle1.style = {fillColor:'white', strokeColor: 'black', strokeWidth: 2};
 		circle2.style = {fillColor:'green', strokeColor: 'black', strokeWidth: 2};
 		circle3.style = {fillColor:'yellow', strokeColor: 'black', strokeWidth: 2};
 
+		circles = [circle1, circle2, circle3];
 
 		aim = new paper.Shape.Circle({x: dw/2, y: dh/2}, 4);		
 		aim.style = { fillColor: defaultColor };	
+		
+		paper.view.attach('frame', onFrame);
+
 		paper.view.draw();
 	}
 
 	function moveAim(x, y){ 
-		if(!aimDestination)
-			paper.view.attach('frame', onFrame);
-
 		aimDestination = new paper.Point(x, y);
 	}
 
@@ -56,14 +58,22 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 		paper.view.draw();
 	}
 
-	function onFrame(event) { console.log('onFrame')
-		aim.position = aim.position.add(aimDestination.subtract(aim.position).divide(60 * 0.2)); // 0.2s!
+	function onFrame(event) { 
+		if(aimDestination)
+			aim.position = aim.position.add(aimDestination.subtract(aim.position).divide(60 * 0.65)); // 0.2s!
 
-		if(aimDestination.equals(aim.position)){
-			paper.view.dettach('frame', onFrame);
+		if(aimDestination && aimDestination.equals(aim.position)){
 			aimDestination = null;
 		}
 
+		_.each(circles, function(c){
+			c.position = c.position.add(new paper.Point({
+				x: Math.cos(angle) * 2,
+				y: Math.sin(angle) * 2
+			}))
+		})
+
+		angle+=0.025;
 		paper.view.draw();		
 	}	
 	
@@ -78,7 +88,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 			socket.on('paired', function(data){
 				$('div.status').text('calibrating')
 			})
-			socket.on('dev-angles', function(data){ console.log('dev-angles data')
+			socket.on('dev-angles', function(data){ 
 				data.a = (data.a > 180) ? data.a - 360 : data.a;
 			
 				if(ia.length < 4){	
@@ -98,7 +108,6 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, i
 
 					$('div.status').text('connected')
 					setAimColor(activeColor);
-
 				}
 
 				var difa = ensureBetween((iaAvg - data.a) * multa, -90, 90);
