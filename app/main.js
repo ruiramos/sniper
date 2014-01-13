@@ -1,5 +1,5 @@
 require(['jquery', 'underscore', 'socket.io-aclient', 'paper'], function($, _, io, paper){
-	var socket = io.connect('http://ruiramos.com:3001'),
+	var socket = io.connect('http://localhost:3000'),
 			gameId,
 			ia, ib, ig, 
 			iaAvg, ibAvg,

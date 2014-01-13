@@ -6,7 +6,7 @@ require(['jquery', 'underscore', 'socket.io-aclient'], function($, _, io){
 		gameId = $('input').val();
 		
 		if(!socket)
-			socket = io.connect('http://ruiramos.com:3001');
+			socket = io.connect('http://192.168.0.5:3000');
 		else
 			socket.emit('register', {type: 'mobile', code: gameId});			
 
