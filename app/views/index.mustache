@@ -5,15 +5,43 @@
 	<script src="/bower_components/requirejs/require.js"></script>
 	<script src="app/config.js"></script>
 
-	<script src="/app/main.js"></script>
+	<script src="/app/desktop.js"></script>
 
 	<link rel="stylesheet" href="app/styles/desktop.css">
 </head>
 <body>
 	<canvas id="area"></canvas>
-	<div class="code">
-		<h1>codigo e: <span></span></h1>
-		<div class="status"></div>
+	<div class="big-message">
+		
+	</div>
+	<section class="intro-box">
+		<h1>SNIPER</h1>
+
+		<div class="intro-container">
+			<div class="connect">
+				<div class="fb-button">
+<!-- 					<fb:login-button show-faces="true" width="100" max-rows="1"></fb:login-button>
+ -->					
+ 					<button type="button">Login with Facebook</button>
+				</div>
+				<div class="skip-button">
+					<button type="button">Skip</button>
+				</div>
+			</div>
+
+			<div class="code-container">
+				<p>To play Sniper grab your phone and open http://ruiramos.com:3001. When prompted, enter the following code:</p>
+				<h2 class="code"></h2>
+			</div>				
+		</div>
+
+	</section>
+	
+<!-- 	<div class="status"></div>
+ -->	
+ <div class="fb-pic" style="display:none"></div>		
+
+  <div id="fb-root"></div>	
 	</div>
 </body>
 </html>
