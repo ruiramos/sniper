@@ -50,8 +50,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			if(slide == 1){
 				initSocket();
 
-				nextSlide();
-				drawPlayerCircle();
+				// nextSlide();
+				// drawPlayerCircle();
 
 			} else if(slide == 2){
 				$('.intro-box').fadeOut();
@@ -133,7 +133,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	}
 
 	function drawPlayerCircle() {
-		player = new paper.Shape.Circle({x: dw/2, y: dh/2}, 100)
+		player = new paper.Shape.Circle({x: dw/2, y: dh/2}, 75)
 		player.style = {fillColor:'gray', strokeColor: 'black', strokeWidth: 1};
 	}
 
@@ -192,8 +192,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 					setAimColor(activeColor);
 					
 					drawPlayerCircle();
+					$('.fb-pic').show();					
 					nextWave();
-					$('.fb-pic').show();
 				}
 
 				var difa = ensureBetween((iaAvg - data.a) * multa, -90, 90);
