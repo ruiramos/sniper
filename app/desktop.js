@@ -20,7 +20,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			wave = 0,
 			waveColors = ['green', 'blue', 'yellow', 'red'],
 			middle = new paper.Point(dw/2, dh/2), 
-			player;
+			player,
+			gameStarted = false;
 	
 	var defaultColor = '#0000ff',
 			activeColor = '#ff0000'
@@ -117,6 +118,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 
 		aim = new paper.Shape.Circle({x: dw/2, y: dh/2}, 4);		
 		aim.style = { fillColor: defaultColor };	
+		var layer = new paper.Layer({ children: [aim] });
+		paper.project.layers[0].activate();
 		
 		paper.view.attach('frame', onFrame);
 
@@ -138,6 +141,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	}
 
 	function onFrame(event) { 
+		if(!gameStarted) return;
+
 		if(aimDestination)
 			aim.position = aim.position.add(aimDestination.subtract(aim.position).divide(60 * 0.3)); // 0.2s!
 
@@ -194,6 +199,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 					drawPlayerCircle();
 					$('.fb-pic').show();					
 					nextWave();
+					gameStarted = true;
 				}
 
 				var difa = ensureBetween((iaAvg - data.a) * multa, -90, 90);
@@ -262,8 +268,8 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 
 	function shoot(){
 		_.each(enemies, function(obj, i){
-			var enemy = obj.e;
-			if(enemy.hitTest(aim.position)){
+			var enemy = obj.enemy;
+			if(enemy.hitTest(aim.position)){ console.log('got hit!!');
 				removeEnemy(enemy, i);
 			}
 		})
