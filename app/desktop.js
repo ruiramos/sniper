@@ -162,7 +162,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			// move on up
 			var enemy = obj.enemy;
 			enemy.position = enemy.position.add(
-				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 1100)
+				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 1000)
 			);
 
 			if(playerRaster && enemy.hitTest(playerRaster.position)){
