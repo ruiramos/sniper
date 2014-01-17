@@ -81,15 +81,3 @@ div.big-message {
   color: rgba(0, 0, 0, 0.15);
   text-align: center;
 }
-div.fb-pic {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: -75px;
-  margin-left: -75px;
-  width: 150px;
-  height: 150px;
-  border-radius: 150px;
-  border: 1px solid #eee;
-  background-size: cover;
-}

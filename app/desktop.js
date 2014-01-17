@@ -2,8 +2,11 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 
 	if(window.location.hostname == 'localhost'){
 		var host = 'http://localhost:3001';
+		var fbAppId = '204380476430971';
 	} else {
 		var host = 'http://ruiramos.com:3001';
+		var fbAppId = '1375930892662310';
+
 	}
 
 	var socket = io.connect(host),
@@ -18,10 +21,12 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			angle = 0, 
 			slide = 0,
 			wave = 0,
-			waveColors = ['green', 'blue', 'yellow', 'red'],
+			waveColors = ['green', 'blue', 'yellow', 'red', 'pink'],
 			middle = new paper.Point(dw/2, dh/2), 
-			player,
-			gameStarted = false;
+			playerRaster,
+			gameStarted = false,
+			bMessageTimeout,
+			wavesInterval;
 	
 	var defaultColor = '#0000ff',
 			activeColor = '#ff0000'
@@ -51,27 +56,30 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			if(slide == 1){
 				initSocket();
 
-				// nextSlide();
-				// drawPlayerCircle();
-
 			} else if(slide == 2){
 				$('.intro-box').fadeOut();
 				drawCanvas();
-				setInterval(function(){ nextWave()}, 10000);	
 
-				nextWave();		
+				bmessage('Aim at the blue dot');
+
+				setTimeout(function(){
+					nextWave();		
+					wavesInterval = setInterval(function(){ nextWave()}, (9500 + (wave-1) * 500));	
+				}, 3000);
 			}
 		})
 	}
 
 	function initFB(){
 		window.fbAsyncInit = function() {
-		  FB.init({
-		    appId      : '1375930892662310',
+			var obj = {
+		    appId      : fbAppId,
 		    status     : true, // check login status
 		    cookie     : true, // enable cookies to allow the server to access the session
 		    xfbml      : true  // parse XFBML
-		  })		
+		  };
+		  console.log(obj)
+		  FB.init(obj);		
 		}
 
 		FB.Event.subscribe('auth.authResponseChange', function(response) {
@@ -86,8 +94,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				    },
 				    function (response) {
 				      if (response && !response.error) {
-				        $('.fb-pic').css('background', 'url('+ response.data.url +') scroll no-repeat 0 0');
-				        // if(slide == 0) nextSlide();
+				        $('#fb-pic').attr('src', response.data.url);
 				      }
 				    }
 				);				
@@ -135,10 +142,10 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 		paper.view.draw();
 	}
 
-	function drawPlayerCircle() {
-		player = new paper.Shape.Circle({x: dw/2, y: dh/2}, 75)
-		player.style = {fillColor:'gray', strokeColor: 'black', strokeWidth: 1};
-	}
+	// function drawPlayerCircle() {
+	// 	player = new paper.Shape.Circle({x: dw/2, y: dh/2}, 75)
+	// 	player.style = {fillColor:'gray', strokeColor: 'black', strokeWidth: 1};
+	// }
 
 	function onFrame(event) { 
 		if(!gameStarted) return;
@@ -151,13 +158,15 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 		}
 
 		_.each(enemies, function(obj){
+
+			// move on up
 			var enemy = obj.enemy;
 			enemy.position = enemy.position.add(
-				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 900)
+				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 1100)
 			);
 
-			if(player && enemy.hitTest(player.position)){
-				removeEnemy(enemy);
+			if(playerRaster && enemy.hitTest(playerRaster.position)){
+				gameOver();
 			}			
 		})
 
@@ -178,28 +187,28 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			socket.on('dev-angles', function(data){ 
 				data.a = (data.a > 180) ? data.a - 360 : data.a;
 			
-				if(ia.length < 6){	
+				if(ia.length < 14){	
 					ia.push(data.a);
 					ib.push(data.b);
 					ig.push(data.g); 
 					return;				
 
-				} else if(ia.length == 6 && !iaAvg){
-					ia.splice(0,3);
+				} else if(ia.length == 14 && !iaAvg){
+					ia.splice(0,10);
 					iaAvg = _.reduce(ia, function(memo, num){ return memo + num}, 0);
 					iaAvg /= ia.length;
 
-					ib.splice(0,3);				
+					ib.splice(0,10);				
 					ibAvg = _.reduce(ib, function(memo, num){ return memo + num}, 0);
 					ibAvg /= ib.length;				
 
 					$('div.status').text('connected')
 					setAimColor(activeColor);
 					
-					drawPlayerCircle();
-					$('.fb-pic').show();					
-					nextWave();
+					playerRaster = new paper.Raster('fb-pic');
+					playerRaster.position = paper.view.center;
 					gameStarted = true;
+
 				}
 
 				var difa = ensureBetween((iaAvg - data.a) * multa, -90, 90);
@@ -239,11 +248,15 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	function nextWave(){
 		wave++;
 
-		$('.big-message').text('Wave '+wave).fadeIn();
-		setTimeout(function(){ $('.big-message').fadeOut(); }, 2500);
+		if(wave > waveColors.length){
+			endGame();
+			return;
+		}
 
-		for(var i = 0; i < wave + Math.round(wave * 3/2); i++){
-			var r = Math.round((-4.5 * wave + 90) * (Math.random() / 2 + 0.75));
+		bmessage('Wave '+wave);
+
+		for(var i = 0; i < wave + Math.round(wave * 5/4 + 0.5); i++){
+			var r = Math.round((-4.5 * wave + 80) * (Math.random() / 2 + 0.75));
 			
 			if(Math.round(Math.random())){
 				var xPos = Math.round(Math.random()) * dw;
@@ -267,27 +280,40 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	}
 
 	function shoot(){
-		_.each(enemies, function(obj, i){
-			var enemy = obj.enemy;
-			if(enemy.hitTest(aim.position)){ console.log('got hit!!');
+		console.log(enemies.length);
+		for(var i=0; i<enemies.length; i++){
+			var enemy = enemies[i].enemy;
+			if(enemy.hitTest(aim.position)){ 
 				removeEnemy(enemy, i);
 			}
-		})
+		}
 	}
 
 	function removeEnemy(enemy, i){
 		enemy.remove();
-		if(i) {
-			enemies.splice(i, 1);
-		} else {
-			for(var i=0; i<enemies.length;i++){
-				if(enemies[i] == enemy){
-					enemies.splice(i, 1);
-					return;
-				}
-			}
-		}
+		enemies.splice(i, 1);
 	}
+
+	function bmessage(msg){
+		if(bMessageTimeout){
+			clearTimeout(bMessageTimeout);
+			bMessageTimeout = null;
+		}
+		$('.big-message').text(msg).fadeIn();
+		bMessageTimeout = setTimeout(function(){ $('.big-message').fadeOut(); }, 2500);		
+	}
+
+	function endGame(){
+		gameStarted = false;
+		clearInterval(wavesInterval);
+		bmessage('You won!');
+	}
+
+	function gameOver(){
+		gameStarted = false;
+		clearInterval(wavesInterval);
+		bmessage('Game over!');
+	}	
 
 	// ------------------------------ Utils
 	function ensureBetween(value, min, max){
