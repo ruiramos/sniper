@@ -151,7 +151,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 900)
 			);
 
-			if(enemy.hitTest(player.position)){
+			if(player && enemy.hitTest(player.position)){
 				removeEnemy(enemy);
 			}			
 		})
