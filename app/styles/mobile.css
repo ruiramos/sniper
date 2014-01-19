@@ -1,14 +1,12 @@
 div.controls {
   text-align: center;
 }
-div.controls button.shoot {
+div.controls button {
   width: 100%;
   height: 200px;
   margin-top: 5%;
-  background: red;
   color: white;
-  border-bottom: 2px solid darkred;
-  border-right: 2px solid darkred;
+  display: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   -webkit-touch-callout: none;
@@ -18,6 +16,19 @@ div.controls button.shoot {
   -ms-user-select: none;
   user-select: none;
 }
+div.controls button.shoot {
+  background: #ff0000;
+  border-bottom: 2px solid #b30000;
+  border-right: 2px solid #b30000;
+}
 div.controls button.shoot:active {
-  background: darkred;
+  background: #b30000;
+}
+div.controls button.calibrate {
+  background: #008000;
+  border-bottom: 2px solid #003400;
+  border-right: 2px solid #003400;
+}
+div.controls button.calibrate:active {
+  background: #003400;
 }

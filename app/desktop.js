@@ -11,25 +11,38 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 
 	var socket = io.connect(host),
 			gameId,
-			ia, ib, ig, 
+			ia, ib, ig,
 			iaAvg, ibAvg,
 			dw = $(document).width(),
 			dh = $(document).height(),
 			multa = multb = 3.5, // should actually depend on screen size
 			aim, aimDestination,
-			enemies = [], 
-			angle = 0, 
+			enemies = [],
+			angle = 0,
 			slide = 0,
 			wave = 0,
 			waveColors = ['green', 'blue', 'yellow', 'red', 'pink'],
-			middle = new paper.Point(dw/2, dh/2), 
-			playerRaster,
+			middle = new paper.Point(dw/2, dh/2),
+			playerTarget,
 			gameStarted = false,
+			facebookConnect,
 			bMessageTimeout,
 			wavesInterval;
-	
+
 	var defaultColor = '#0000ff',
-			activeColor = '#ff0000'
+			activeColor = '#ff0000';
+
+	window.fbAsyncInit = function() {
+		var obj = {
+	    appId      : fbAppId,
+	    status     : true, // check login status
+	    cookie     : true, // enable cookies to allow the server to access the session
+	    xfbml      : true  // parse XFBML
+	  };
+
+		initFB();
+	  FB.init(obj);
+	}
 
 	init();
 	initSocket();
@@ -41,14 +54,15 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 		ig = [];
 		$('div.status').text('disconnected');
 
-		initFB();
-
 		$('.connect .fb-button button').click(function(){
+			facebookConnect = true;
+
 			FB.login(function(res){
 				nextSlide();
 			});
 		})
 		$('.connect .skip-button button').click(function(){
+			facebookConnect = false;
 			nextSlide();
 		})
 
@@ -60,29 +74,14 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				$('.intro-box').fadeOut();
 				drawCanvas();
 
-				bmessage('Aim at the blue dot');
+				bmessage('Aim at the blue dot and press calibrate');
 
-				setTimeout(function(){
-					nextWave();		
-					wavesInterval = setInterval(function(){ nextWave()}, (9500 + (wave-1) * 500));	
-				}, 3000);
 			}
 		})
 	}
 
 	function initFB(){
-		window.fbAsyncInit = function() {
-			var obj = {
-		    appId      : fbAppId,
-		    status     : true, // check login status
-		    cookie     : true, // enable cookies to allow the server to access the session
-		    xfbml      : true  // parse XFBML
-		  };
-		  console.log(obj)
-		  FB.init(obj);		
-		}
-
-		FB.Event.subscribe('auth.authResponseChange', function(response) {
+		FB.Event.subscribe('auth.authResponseChange', function(response) { console.log(response)
 			if (response.status === 'connected') {
 				/* make the API call */
 				FB.api(
@@ -97,7 +96,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				        $('#fb-pic').attr('src', response.data.url);
 				      }
 				    }
-				);				
+				);
 			}
 		});
 	}
@@ -112,33 +111,22 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	function drawCanvas(){
 		paper.setup('area');
 
-		// cheating
-		// circle1 = new paper.Shape.Circle({x: 100, y: 200}, 60)
-		// circle2 = new paper.Shape.Circle({x: 1000, y: 150}, 70)
-		// circle3 = new paper.Shape.Circle({x: 400, y: 570}, 80)
-
-		// circle1.style = {fillColor:'white', strokeColor: 'black', strokeWidth: 2};
-		// circle2.style = {fillColor:'green', strokeColor: 'black', strokeWidth: 2};
-		// circle3.style = {fillColor:'yellow', strokeColor: 'black', strokeWidth: 2};
-
-		// circles = [circle1, circle2, circle3];
-
-		aim = new paper.Shape.Circle({x: dw/2, y: dh/2}, 4);		
-		aim.style = { fillColor: defaultColor };	
+		aim = new paper.Shape.Circle({x: dw/2, y: dh/2}, 4);
+		aim.style = { fillColor: defaultColor };
 		var layer = new paper.Layer({ children: [aim] });
 		paper.project.layers[0].activate();
-		
+
 		paper.view.attach('frame', onFrame);
 
 		paper.view.draw();
 	}
 
-	function moveAim(x, y){ 
+	function moveAim(x, y){
 		aimDestination = new paper.Point(x, y);
 	}
 
 	function setAimColor(color){
-		aim.style = { fillColor: color };	
+		aim.style = { fillColor: color };
 		paper.view.draw();
 	}
 
@@ -147,7 +135,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	// 	player.style = {fillColor:'gray', strokeColor: 'black', strokeWidth: 1};
 	// }
 
-	function onFrame(event) { 
+	function onFrame(event) {
 		if(!gameStarted) return;
 
 		if(aimDestination)
@@ -162,52 +150,68 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			// move on up
 			var enemy = obj.enemy;
 			enemy.position = enemy.position.add(
-				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 1070)
+				middle.subtract(obj.startPosition).divide(-100 * obj.wave + 1000)
 			);
 
-			if(playerRaster && enemy.hitTest(playerRaster.position)){
+			if(playerTarget && enemy.hitTest(playerTarget.position)){
 				gameOver();
-			}			
+			}
 		})
 
 
-		paper.view.draw();		
-	}	
-	
+		paper.view.draw();
+	}
+
 	// ------------------------------ Socket / Connections
 	function initSocket(){
-		socket.on('connect', function () { 
+		socket.on('connect', function () {
 			socket.emit('init', {}, function(data){
 				gameId = data.code;
 				$('.code').text(gameId);
 			})
+
 			socket.on('paired', function(data){
 				nextSlide();
 			})
-			socket.on('dev-angles', function(data){ 
+
+			socket.on('calibrate', function(){
+				socket.emit('start-game', {code: gameId});
+
+				setTimeout(function(){
+					nextWave();
+					wavesInterval = setInterval(function(){ nextWave()}, (9500 + (wave-1) * 500));
+				}, 2000);
+			});
+
+			socket.on('dev-angles', function(data){
 				data.a = (data.a > 180) ? data.a - 360 : data.a;
-			
-				if(ia.length < 14){	
+
+				if(ia.length < 8){
 					ia.push(data.a);
 					ib.push(data.b);
-					ig.push(data.g); 
-					return;				
+					ig.push(data.g);
+					return;
 
-				} else if(ia.length == 14 && !iaAvg){
-					ia.splice(0,10);
+				} else if(ia.length == 8 && !iaAvg){
+					ia.splice(0,4);
 					iaAvg = _.reduce(ia, function(memo, num){ return memo + num}, 0);
 					iaAvg /= ia.length;
 
-					ib.splice(0,10);				
+					ib.splice(0,4);
 					ibAvg = _.reduce(ib, function(memo, num){ return memo + num}, 0);
-					ibAvg /= ib.length;				
+					ibAvg /= ib.length;
 
-					$('div.status').text('connected')
+					$('div.status').text('connected');
 					setAimColor(activeColor);
-					
-					playerRaster = new paper.Raster('fb-pic');
-					playerRaster.position = paper.view.center;
 					gameStarted = true;
+
+					if(facebookConnect){
+						playerTarget = new paper.Raster('fb-pic');
+						playerTarget.position = paper.view.center;
+					} else {
+						playerTarget = new paper.Shape.Circle({x: dw/2, y: dh/2}, 80);
+						playerTarget.style = { fillColor: '#eee' };
+					}
 
 				}
 
@@ -238,7 +242,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				socket.emit('init', {}, function(data){
 					gameId = data.code;
 					$('.code').text(gameId);
-				});			
+				});
 			});
 		});
 	}
@@ -257,7 +261,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 
 		for(var i = 0; i < wave + Math.round(wave * 5/4 + 0.5); i++){
 			var r = Math.round((-4.5 * wave + 80) * (Math.random() / 2 + 0.75));
-			
+
 			if(Math.round(Math.random())){
 				var xPos = Math.round(Math.random()) * dw;
 				(xPos > 0) ? xPos += r + Math.random()*2*r : xPos -= r + Math.random()*2*r;
@@ -267,14 +271,14 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 				var xPos = Math.round(Math.random() * dw);
 
 				var yPos = Math.round(Math.random()) * dh;
-				(yPos > 0) ? yPos += r + Math.random()*2*r : yPos -= r + Math.random()*2*r;				
+				(yPos > 0) ? yPos += r + Math.random()*2*r : yPos -= r + Math.random()*2*r;
 			}
-			
+
 			var enemy = new paper.Shape.Circle({x: xPos, y: yPos}, r);
 
 			enemy.style = {fillColor: waveColors[wave-1], strokeColor: 'black', strokeWidth: 2};
-			
-			enemies.push({enemy: enemy, wave: wave, startPosition: new paper.Point(xPos, yPos)});			
+
+			enemies.push({enemy: enemy, wave: wave, startPosition: new paper.Point(xPos, yPos)});
 		}
 
 	}
@@ -283,7 +287,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 		console.log(enemies.length);
 		for(var i=0; i<enemies.length; i++){
 			var enemy = enemies[i].enemy;
-			if(enemy.hitTest(aim.position)){ 
+			if(enemy.hitTest(aim.position)){
 				removeEnemy(enemy, i);
 			}
 		}
@@ -300,7 +304,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 			bMessageTimeout = null;
 		}
 		$('.big-message').text(msg).fadeIn();
-		bMessageTimeout = setTimeout(function(){ $('.big-message').fadeOut(); }, 2500);		
+		bMessageTimeout = setTimeout(function(){ $('.big-message').fadeOut(); }, 2500);
 	}
 
 	function endGame(){
@@ -313,7 +317,7 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 		gameStarted = false;
 		clearInterval(wavesInterval);
 		bmessage('Game over!');
-	}	
+	}
 
 	// ------------------------------ Utils
 	function ensureBetween(value, min, max){

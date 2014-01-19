@@ -25,7 +25,7 @@ app.get('/', function(req, res, next){
 var clients = {};
 
 io.sockets.on('connection', function (socket) {
-	socket.on('init', function(data, fn){ 
+	socket.on('init', function(data, fn){
 		var code;
 		do {
 			code = Math.floor(Math.random() * 10000);
@@ -42,9 +42,9 @@ io.sockets.on('connection', function (socket) {
 	})
 
   socket.on('register', function(data){
-  	if(!(data.code && clients[data.code])) 
+  	if(!(data.code && clients[data.code]))
   		return;
-  	
+
   	if(clients[data.code]['status'] == -1){
   		clients[data.code]['status'] = 1;
   		clients[data.code]['mobile'] = socket;
@@ -60,13 +60,21 @@ io.sockets.on('connection', function (socket) {
   	clients[data.code] && clients[data.code]['desktop'].emit('dev-angles', data);
   });
 
+  socket.on('calibrate', function(data){
+    clients[data.code] && clients[data.code]['desktop'].emit('calibrate', data);
+  });
+
   socket.on('shoot', function(data){
-  	clients[data.code] && clients[data.code]['desktop'].emit('shoot', data);
-  });  
+    clients[data.code] && clients[data.code]['desktop'].emit('shoot', data);
+  });
+
+  socket.on('start-game', function(data){
+  	clients[data.code] && clients[data.code]['mobile'].emit('start-game');
+  });
 
   socket.on('disconnect', function () {
 
-    socket.get('code', function(err, code){ 
+    socket.get('code', function(err, code){
     	socket.get('type', function(err, type){
     		if(type == 'desktop'){
     			clients[code]['mobile'] && clients[code]['mobile'].emit('close', function(){
@@ -77,7 +85,7 @@ io.sockets.on('connection', function (socket) {
     		} else if(type == 'mobile'){
     			clients[code]['desktop'] && clients[code]['desktop'].emit('close', function(){
     				delete clients[code];
-    				console.log(clients);    				
+    				console.log(clients);
     			})
     		}
     	})
