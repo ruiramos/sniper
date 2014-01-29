@@ -32,17 +32,15 @@ require(['jquery', 'underscore', 'socket.io-aclient', 'paper', 'bower-facebook']
 	var defaultColor = '#0000ff',
 			activeColor = '#ff0000';
 
-	window.fbAsyncInit = function() {
-		var obj = {
-	    appId      : fbAppId,
-	    status     : true, // check login status
-	    cookie     : true, // enable cookies to allow the server to access the session
-	    xfbml      : true  // parse XFBML
-	  };
+	var obj = {
+    appId      : fbAppId,
+    status     : true, // check login status
+    cookie     : true, // enable cookies to allow the server to access the session
+    xfbml      : true  // parse XFBML
+  };
 
-		initFB();
-	  FB.init(obj);
-	}
+	initFB();
+  FB.init(obj);
 
 	init();
 	initSocket();
